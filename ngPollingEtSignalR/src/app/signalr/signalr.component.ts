@@ -40,8 +40,8 @@ export class SignalrComponent implements OnInit {
                               .withUrl('https://localhost:7289/api/signalRHub')
                               .build();
     // TODO On peut commencer à écouter pour les évènements qui vont déclencher des callbacks
-    this.hubConnection.on("TaskList", (tasks: UselessTask[]) => {
-      this.taskList(tasks);
+    this.hubConnection.on("TaskList", (tasks) => {
+      this.tasks = tasks;
     });
     // TODO On doit ensuite se connecter
     this.hubConnection
@@ -58,9 +58,5 @@ export class SignalrComponent implements OnInit {
 
   addtask() {
     // TODO On invoke la méthode pour ajouter une tâche sur le serveur
-  }
-
-  taskList(tasks: UselessTask[]) {
-    this.tasks = tasks;
   }
 }
