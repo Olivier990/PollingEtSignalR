@@ -25,9 +25,10 @@ namespace labo.signalr.api.Hubs
             TaskList();
         }
 
-        public async Task<ActionResult<IEnumerable<UselessTask>>> TaskList()
+        public async Task TaskList()
         {
-            return await _context.UselessTasks.ToListAsync();
+            var tasks =  _context.UselessTasks.ToListAsync();
+            await Clients.Caller.SendAsync("taskList", tasks);
         }
 
         //[HttpPost]
