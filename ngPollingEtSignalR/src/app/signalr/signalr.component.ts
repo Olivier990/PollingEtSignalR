@@ -37,12 +37,20 @@ export class SignalrComponent implements OnInit {
   connecttohub() {
     // TODO On doit commencer par créer la connexion vers le Hub
     this.hubConnection = new signalR.HubConnectionBuilder()
-                              .withUrl('https://localhost:7289/api/signalRHub')
+                              .withUrl(`https://localhost:7289/signalRHub?userCount=${encodeURIComponent(this.usercount)}`)
                               .build();
+
     // TODO On peut commencer à écouter pour les évènements qui vont déclencher des callbacks
-    this.hubConnection.on("TaskList", (tasks) => {
-      this.tasks = tasks;
+    this.hubConnection.on("TaskList", (data: UselessTask[]) => {
+      console.log("SignalR TaskList", data);
+      this.tasks = data;
     });
+
+    this.hubConnection.on("UserCount", (data: number) => {
+      console.log("SignalR UserCount", data);
+      this.usercount = data;
+    });
+
     // TODO On doit ensuite se connecter
     this.hubConnection
         .start()
@@ -54,9 +62,11 @@ export class SignalrComponent implements OnInit {
 
   complete(id: number) {
     // TODO On invoke la méthode pour compléter une tâche sur le serveur
+    this.hubConnection!.invoke('Complete', id);
   }
 
   addtask() {
     // TODO On invoke la méthode pour ajouter une tâche sur le serveur
+    this.hubConnection!.invoke('Add', this.taskname);
   }
 }

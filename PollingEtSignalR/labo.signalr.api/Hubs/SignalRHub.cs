@@ -12,6 +12,7 @@ namespace labo.signalr.api.Hubs
     public class SignalRHub : Hub
     {
         private readonly ApplicationDbContext _context;
+        private int userCount;
 
         public SignalRHub(ApplicationDbContext context)
         {
@@ -20,42 +21,55 @@ namespace labo.signalr.api.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            base.OnConnectedAsync();
+            var userCountEnStringValue = Context.GetHttpContext().Request.Query["userCount"];
+            int userCount = int.Parse(userCountEnStringValue);
+            await base.OnConnectedAsync();
             // TODO: Ajouter votre logique
-            TaskList();
+            userCount++;
+            UpdateUserCount(userCount);
+            await TaskList();
+        }
+
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            base.OnDisconnectedAsync(exception);
+            // TODO: Ajouter votre logique
+            userCount--;
+            //UpdateUserCount();
+        }
+
+        public async Task UpdateUserCount(int userCount)
+        {
+            Clients.Caller.SendAsync("UserCount", userCount);
         }
 
         public async Task TaskList()
-        {
-            var tasks =  _context.UselessTasks.ToListAsync();
-            await Clients.Caller.SendAsync("taskList", tasks);
+        {            
+            var tasks = await _context.UselessTasks.ToListAsync();
+            await Clients.Caller.SendAsync("TaskList", tasks);
         }
 
-        //[HttpPost]
-        //public async Task<ActionResult<UselessTask>> Add(string taskText)
-        //{
-        //    UselessTask uselessTask = new UselessTask()
-        //    {
-        //        Completed = false,
-        //        Text = taskText
-        //    };
-        //    _context.UselessTasks.Add(uselessTask);
-        //    await _context.SaveChangesAsync();
+        public async Task Add(string taskName)
+        {
+            UselessTask uselessTask = new UselessTask()
+            {
+                Completed = false,
+                Text = taskName
+            };
+            _context.UselessTasks.Add(uselessTask);
+            await _context.SaveChangesAsync();
+            await TaskList();
+        }
 
-        //    return Ok(uselessTask);
-        //}
-
-        //[HttpGet("{id}")]
-        //public async Task<IActionResult> Complete(int id)
-        //{
-        //    UselessTask? task = await _context.FindAsync<UselessTask>(id);
-        //    if (task != null)
-        //    {
-        //        task.Completed = true;
-        //        await _context.SaveChangesAsync();
-        //        return NoContent();
-        //    }
-        //    return NotFound();
-        //}
+        public async Task Complete(int id)
+        {
+            UselessTask? task = await _context.FindAsync<UselessTask>(id);
+            if (task != null)
+            {
+                task.Completed = true;
+                await _context.SaveChangesAsync();
+                await TaskList();
+            }
+        }
     }
 }
